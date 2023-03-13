@@ -53,53 +53,9 @@ void print_usage(){
 	printf("Calculate sha256 hash of given input\n\n");
 }
 
-int main(int argc, char **argv) {
-	print_usage();
-	int n = 10;
-	JOB ** jobs;
-	BYTE buff[20];
-	char size[20];
-	char buff2[20];
 
 
 
-    checkCudaErrors(cudaMallocManaged(&jobs, n * sizeof(JOB *)));
-	printf("Checked for errors\n");
-
-
-
-    for (int x = 0; x < 10; x++) {
-
-        sprintf(buff2, "4501600%d", x);
-		printf("Input: %s\n", buff2);
-
-		memcpy(buff, buff2, strlen(buff2));
-
-        sprintf((char *)size, "%d", x);
-
-        jobs[x] = JOB_init(buff, strlen((char *)buff), size);
-    }
-
-	printf("Created jobs\n");
-
-    // line = trim(line);
-    // buff = get_file_data(line, &temp);
-    
-	printf("Start Jobs\n");
-    pre_sha256();
-    runJobs(jobs, n);
-
-	cudaDeviceSynchronize();
-	printf("Print Jobs\n");
-
-	// printf("\t @ 0x%x \n", jobs[0]->data);
-	// print_jobs(jobs, n);
-	print_job(jobs[0]);
-	printf("End Jobs\n");
-
-	cudaDeviceReset();
-	return 0;
-}
 
 // char * hash_to_string(BYTE * buff) {
 // 	char * string = (char *)malloc(70);
@@ -114,20 +70,77 @@ int main(int argc, char **argv) {
 // }
 
 // void print_job(JOB * j){
-// 	printf("--test\n");
+// 	// printf("--test\n");
 // 	printf("%s  %s\n", hash_to_string(j->digest), j->fname);
 // }
 
-// void print_jobs(JOB ** jobs, int n) {
-// 	printf("N: %d\n", n);
-// 	for (int i = 0; i < n; i++)
-// 	{
-//         print_job(jobs[i]);
-// 		// printf("@ %p JOB[%i] \n", jobs[i], i);
-// 		// printf("\t @ 0x%p data = %x \n", jobs[i]->data, (jobs[i]->data == 0)? 0 : jobs[i]->data[0]);
-// 		// printf("\t @ 0x%p size = %llu \n", &(jobs[i]->size), jobs[i]->size);
-// 		// printf("\t @ 0x%p fname = %s \n", &(jobs[i]->fname), jobs[i]->fname);
-// 		// printf("\t @ 0x%p digest = %s \n------\n", jobs[i]->digest, hash_to_string(jobs[i]->digest));
-// 	}
-// }
 
+
+
+void print_jobs_with_zero(JOB ** jobs, int n, int n_zero) {
+	for (int i = 0; i < n; i++) {
+		bool show = true;
+
+		for (int j = 0; j < n_zero; j++) {
+			if (jobs[i]->digest[j] != 0) {
+				show = false;
+			}
+		}
+
+		if (show) {
+	        print_job(jobs[i]);
+		}
+	}
+}
+
+void prog(int start, int n) {
+	JOB ** jobs;
+	char size[20];
+	char buff2[20];
+
+
+    checkCudaErrors(cudaMallocManaged(&jobs, n * sizeof(JOB *)));
+
+    for (int x = 0; x < n; x++) {
+        sprintf(buff2, "4501600%x", start + x);
+		BYTE *buff;
+
+		checkCudaErrors(cudaMallocManaged(&buff, strlen(buff2)*sizeof(char)));
+		memcpy(buff, buff2, strlen(buff2));
+        sprintf((char *)size, "%x", start + x);
+
+        jobs[x] = JOB_init(buff, strlen((char *)buff), size);
+    }
+
+	printf("Created jobs\n");
+
+    pre_sha256();
+    runJobs(jobs, n);
+
+	cudaDeviceSynchronize();
+
+	// print_jobs(jobs, n);
+	print_jobs_with_zero(jobs, n,2);
+
+	cudaDeviceReset();
+}
+
+int main(int argc, char **argv) {
+	print_usage();
+
+
+	int n = 1000; // Number of batches
+	int inc = 5000; // Number to do at a time
+
+	int x = 0; // Start value
+
+    for (int i = 0; i < n; i++) {
+		prog(x, inc);
+		printf("Max value: %d\n", x);
+
+		x += inc;
+	}
+
+
+	return 0;
+}

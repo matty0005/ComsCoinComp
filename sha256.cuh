@@ -76,8 +76,8 @@ char * hash_to_string(BYTE * buff) {
 }
 
 void print_job(JOB * j){
-	printf("--test\n");
-	// printf("%s  %s\n", hash_to_string(j->digest), j->fname);
+	// printf("--test\n");
+	printf("%s  %s\n", hash_to_string(j->digest), j->fname);
 }
 
 void print_jobs(JOB ** jobs, int n) {
