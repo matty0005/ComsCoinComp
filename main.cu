@@ -102,12 +102,12 @@ void prog(int start, int n) {
     checkCudaErrors(cudaMallocManaged(&jobs, n * sizeof(JOB *)));
 
     for (int x = 0; x < n; x++) {
-        sprintf(buff2, "4501600%x", start + x);
+        sprintf(buff2, "45801600%X", start + x);
 		BYTE *buff;
 
 		checkCudaErrors(cudaMallocManaged(&buff, strlen(buff2)*sizeof(char)));
 		memcpy(buff, buff2, strlen(buff2));
-        sprintf((char *)size, "%x", start + x);
+        sprintf((char *)size, "%X", start + x);
 
         jobs[x] = JOB_init(buff, strlen((char *)buff), size);
     }
